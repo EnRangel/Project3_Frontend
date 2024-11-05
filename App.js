@@ -6,6 +6,8 @@ import Navbar from './components/Navbar';
 import Home from './components/Home';
 import Login from './components/Login';
 import Profile from './components/Profile';
+import RecipeForm from './components/RecipeForm';
+import RecipeList from './components/RecipeList';
 
 const Stack = createStackNavigator();
 
@@ -21,6 +23,8 @@ export default function App() {
         <Stack.Screen name="Home" component={Home} options={{ title: 'Home' }} />
         <Stack.Screen name="Login" component={Login} options={{ title: 'Login' }} />
         <Stack.Screen name="Profile" component={Profile} options={{ title: 'Profile' }} />
+        <Stack.Screen name="RecipeForm" component={RecipeForm} options={{ title: 'Add Recipe' }} />
+        <Stack.Screen name="RecipeList" component={RecipeList} options={{ title: 'List Recipes' }} />
       </Stack.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>
