@@ -30,6 +30,9 @@ const Navbar = () => {
           <TouchableOpacity onPress={() => { navigation.navigate('Home'); toggleDropdown(); }}>
             <Text style={styles.dropdownItem}>Home</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => { navigation.navigate('Feed'); toggleDropdown(); }}>
+            <Text style={styles.dropdownItem}>Feed</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => { navigation.navigate('Login'); toggleDropdown(); }}>
             <Text style={styles.dropdownItem}>Login</Text>
           </TouchableOpacity>
@@ -75,17 +78,23 @@ const styles = StyleSheet.create({
   dropdown: {
     backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 10,
-    paddingBottom: 20,
+    padding: 15,
+    paddingBottom: 25,
     alignItems: 'flex-start',
     position: 'absolute',
     top: 60,
-    right: 20,
-    width: 150,
+    right: 10,
+    width: 300,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    alignItems: 'center',
   },
   dropdownItem: {
-    paddingVertical: 10,
-    fontSize: 16,
+    paddingVertical: 30,
+    fontSize: 25,
     color: '#333',
   },
 });
