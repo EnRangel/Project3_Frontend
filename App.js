@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
 import Login from './components/Login';
+import SignUp from './components/SignUp';
 import Profile from './components/Profile';
 import RecipeForm from './components/RecipeForm';
 import RecipeList from './components/RecipeList';
@@ -16,13 +17,14 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName="Login"
         screenOptions={{
           header: () => <Navbar />, // Custom Navbar for each screen
         }}
       >
         <Stack.Screen name="Home" component={Home} options={{ title: 'Home' }} />
         <Stack.Screen name="Login" component={Login} options={{ title: 'Login' }} />
+        <Stack.Screen name="SignUp" component={SignUp} options={{ title: 'SignUp' }} />
         {/* <Stack.Screen name="Feed" component={Feed} options={{ title: 'Feed' }} /> */}
         <Stack.Screen name="Profile" component={Profile} options={{ title: 'Profile' }} />
         <Stack.Screen name="RecipeForm" component={RecipeForm} options={{ title: 'Add Recipe' }} />
