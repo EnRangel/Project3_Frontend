@@ -25,7 +25,7 @@ export default function App() {
         <Stack.Screen name="Home" component={Home} options={{ title: 'Home' }} />
         <Stack.Screen name="Login" component={Login} options={{ title: 'Login' }} />
         <Stack.Screen name="SignUp" component={SignUp} options={{ title: 'SignUp' }} />
-        {/* <Stack.Screen name="Feed" component={Feed} options={{ title: 'Feed' }} /> */}
+        <Stack.Screen name="Feed" component={Feed} options={{ title: 'Feed' }} />
         <Stack.Screen name="Profile" component={Profile} options={{ title: 'Profile' }} />
         <Stack.Screen name="RecipeForm" component={RecipeForm} options={{ title: 'Add Recipe' }} />
         <Stack.Screen name="RecipeList" component={RecipeList} options={{ title: 'List Recipes' }} />
