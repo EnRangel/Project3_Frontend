@@ -61,7 +61,7 @@ const Login = ({ navigation }) => {
         onChangeText={(value) => {
           console.log('Email input changed:', value);
           setEmail(value);
-        }} // Added this line
+        }}
       />
 
       <TextInput
@@ -79,6 +79,14 @@ const Login = ({ navigation }) => {
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Log In</Text>
       </TouchableOpacity>
+
+      {/* Link to Sign Up page */}
+      <View style={styles.signupContainer}>
+        <Text style={styles.signupText}>Don't have an account?</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+          <Text style={styles.signupLink}>Sign Up</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -116,5 +124,18 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     textAlign: 'center',
+  },
+  signupContainer: {
+    flexDirection: 'row',
+    marginTop: 20,
+  },
+  signupText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  signupLink: {
+    fontSize: 14,
+    color: '#4285F4',
+    marginLeft: 5,
   },
 });

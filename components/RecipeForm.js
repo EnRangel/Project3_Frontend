@@ -1,27 +1,61 @@
-// src/components/RecipeForm.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { createRecipe } from '../service/RecipeService'; // Mock service function
 
 const RecipeForm = () => {
     const [title, setTitle] = useState('');
     const [ingredients, setIngredients] = useState('');
     const [instructions, setInstructions] = useState('');
+    const [dietaryTags, setDietaryTags] = useState('');
+    const [imageUrl, setImageUrl] = useState('');
 
     const handleSubmit = async () => {
         if (!title || !ingredients || !instructions) {
-            Alert.alert('Error', 'Please fill in all fields');
+            Alert.alert('Error', 'Please fill in all required fields');
             return;
         }
-        await createRecipe({
-            title,
-            ingredients: ingredients.split(',').map(item => item.trim()), // Split and trim ingredients
-            instructions,
-        });
-        Alert.alert('Success', 'Recipe created!');
+
+        try {
+            const response = await fetch('http://10.0.2.2:8080/recipes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // Include session cookies for authentication
+                body: JSON.stringify({
+                    title,
+                    ingredients, // Send ingredients as a plain string
+                    instructions, // Send instructions as a plain string
+                    dietaryTags: dietaryTags.split(',').map((tag) => tag.trim()), // Convert to array
+                    imageUrl, // Optional image URL
+                }),
+            });
+
+            if (!response.ok) {
+                // Attempt to parse error message from backend
+                const errorData = await response.json().catch(() => null);
+                throw new Error(errorData?.message || 'Failed to create recipe');
+            }
+
+            const result = await response.json().catch(() => null);
+            if (result) {
+                Alert.alert('Success', `Recipe created: ${result.recipe?.title || ''}`, [
+                    { text: 'OK', onPress: () => resetForm() },
+                ]);
+            } else {
+                Alert.alert('Success', 'Recipe created successfully!', [
+                    { text: 'OK', onPress: () => resetForm() },
+                ]);
+            }
+        } catch (error) {
+            console.error('Error creating recipe:', error);
+            Alert.alert('Error', error.message || 'Something went wrong');
+        }
+    };
+
+    const resetForm = () => {
         setTitle('');
         setIngredients('');
         setInstructions('');
+        setDietaryTags('');
+        setImageUrl('');
     };
 
     return (
@@ -29,24 +63,36 @@ const RecipeForm = () => {
             <Text style={styles.heading}>Add a New Recipe</Text>
             <TextInput
                 style={styles.input}
-                placeholder="Title"
+                placeholder="Title (required)"
                 value={title}
                 onChangeText={setTitle}
             />
             <TextInput
                 style={styles.input}
-                placeholder="Ingredients (comma-separated)"
+                placeholder="Ingredients (plain text, required)"
                 value={ingredients}
                 onChangeText={setIngredients}
             />
             <TextInput
                 style={styles.textArea}
-                placeholder="Instructions"
+                placeholder="Instructions (required)"
                 value={instructions}
                 onChangeText={setInstructions}
                 multiline
             />
-            <Button title="Add Recipe" onPress={handleSubmit} />
+            <TextInput
+                style={styles.input}
+                placeholder="Dietary Tags (comma-separated)"
+                value={dietaryTags}
+                onChangeText={setDietaryTags}
+            />
+            <TextInput
+                style={styles.input}
+                placeholder="Image URL"
+                value={imageUrl}
+                onChangeText={setImageUrl}
+            />
+            <Button title="Submit Recipe" onPress={handleSubmit} />
         </View>
     );
 };
@@ -80,6 +126,6 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         paddingHorizontal: 10,
         borderRadius: 5,
-        textAlignVertical: 'top', // Ensures multiline input starts at the top
+        textAlignVertical: 'top',
     },
 });

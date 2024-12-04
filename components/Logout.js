@@ -5,7 +5,7 @@ const LogoutButton = ({ navigation }) => {
   const handleLogout = async () => {
     try {
       // Make an API call to the backend logout endpoint
-      const response = await fetch('http://localhost:8080/api/auth/logout', {
+      const response = await fetch('http://10.0.3.3:8080/api/auth/logout', {
         method: 'POST',
         credentials: 'include', // Include cookies for session handling
       });
