@@ -1,6 +1,5 @@
-// components/Navbar.js
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Modal from 'react-native-modal';
 
@@ -9,6 +8,27 @@ const Navbar = () => {
   const [isDropdownVisible, setDropdownVisible] = useState(false);
 
   const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
+
+  const handleLogout = () => {
+    // Clear session or token logic
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          onPress: () => {
+            // Perform logout operations (e.g., clearing session storage)
+            console.log('User logged out');
+            toggleDropdown();
+            navigation.navigate('Login'); // Navigate to login page
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <View style={styles.navbar}>
@@ -33,9 +53,6 @@ const Navbar = () => {
           <TouchableOpacity onPress={() => { navigation.navigate('Feed'); toggleDropdown(); }}>
             <Text style={styles.dropdownItem}>Feed</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { navigation.navigate('Login'); toggleDropdown(); }}>
-            <Text style={styles.dropdownItem}>Login</Text>
-          </TouchableOpacity>
           <TouchableOpacity onPress={() => { navigation.navigate('Profile'); toggleDropdown(); }}>
             <Text style={styles.dropdownItem}>Profile</Text>
           </TouchableOpacity>
@@ -44,6 +61,9 @@ const Navbar = () => {
           </TouchableOpacity>
           <TouchableOpacity onPress={() => { navigation.navigate('RecipeList'); toggleDropdown(); }}>
             <Text style={styles.dropdownItem}>Recipe List</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout}>
+            <Text style={[styles.dropdownItem, styles.logout]}>Logout</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -93,8 +113,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dropdownItem: {
-    paddingVertical: 30,
-    fontSize: 25,
+    paddingVertical: 10,
+    fontSize: 16,
     color: '#333',
+  },
+  logout: {
+    color: 'red',
+    fontWeight: 'bold',
   },
 });
