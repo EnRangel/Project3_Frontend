@@ -1,230 +1,126 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-function Home({ navigation }) {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [formData, setFormData] = useState({
-    recipeName: '',
-    ingredients: '',
-    instructions: '',
-    dietaryTags: '',
-    imageUrl: ''
-  });
+const Home = ({ navigation }) => {
+  const [user, setUser] = useState(null);
 
-  const [posts, setPosts] = useState([]); 
+  useEffect(() => {
+    const fetchUserSession = async () => {
+      try {
+        const response = await fetch('http://10.0.2.2:8080/api/users/session', {
+          method: 'GET',
+          credentials: 'include',
+        });
 
-  const handleInputChange = (name, value) => {
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
-  const handlePostSubmit = () => {
-
-    setPosts([
-      ...posts,
-      {
-        id: posts.length + 1,
-        recipeName: formData.recipeName,
-        ingredients: formData.ingredients,
-        instructions: formData.instructions,
-        dietaryTags: formData.dietaryTags,
-        imageUrl: formData.imageUrl
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+        } else {
+          throw new Error('Failed to fetch user session.');
+        }
+      } catch (err) {
+        console.error('Error fetching user session:', err);
+        navigation.replace('Login');
       }
-    ]);
-    setModalVisible(false);
-    setFormData({
-      recipeName: '',
-      ingredients: '',
-      instructions: '',
-      dietaryTags: '',
-      imageUrl: ''
-    });
-  };
+    };
 
-  const renderPost = ({ item }) => (
-    <View style={styles.postBox}>
-      <Text style={styles.postTitle}>{item.recipeName}</Text>
-      <Text style={styles.postText}>Ingredients: {item.ingredients}</Text>
-      <Text style={styles.postText}>Instructions: {item.instructions}</Text>
-      <Text style={styles.postText}>Dietary Tags: {item.dietaryTags}</Text>
-      {item.imageUrl ? <Text style={styles.postText}>Image URL: {item.imageUrl}</Text> : null}
-    </View>
-  );
+    fetchUserSession();
+  }, [navigation]);
+
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading user data...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Feed</Text>
+      <Text style={styles.title}>Welcome, {user.username}!</Text>
+      <Text style={styles.subtitle}>
+        Explore and share recipes with the community. Discover new flavors and connect with food lovers.
+      </Text>
+
+      {/* Centered Side-by-Side Boxes */}
+      <View style={styles.boxContainer}>
+        <TouchableOpacity
+          style={styles.box}
+          onPress={() => navigation.navigate('Feed')}
+        >
+          <Text style={styles.boxIcon}>🍴</Text>
+          <Text style={styles.boxTitle}>Explore Recipes</Text>
+          <Text style={styles.boxDescription}>Find recipes from around the world.</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.button}
-          onPress={() => setModalVisible(true)}
+          style={styles.box}
+          onPress={() => navigation.navigate('RecipeForm')}
         >
-          <Text style={styles.buttonText}>Post</Text>
+          <Text style={styles.boxIcon}>📖</Text>
+          <Text style={styles.boxTitle}>Share a Recipe</Text>
+          <Text style={styles.boxDescription}>Contribute your favorite recipes to the community.</Text>
         </TouchableOpacity>
       </View>
-
-
-      <View style={styles.horizontalLine} />
-
-
-      <FlatList
-        data={posts}
-        renderItem={renderPost}
-        keyExtractor={(item) => item.id.toString()}
-        style={styles.postsList}
-      />
-
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create a Post</Text>
-
-
-            <TextInput
-              style={styles.input}
-              placeholder="Recipe Name"
-              value={formData.recipeName}
-              onChangeText={(text) => handleInputChange('recipeName', text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Ingredients"
-              value={formData.ingredients}
-              onChangeText={(text) => handleInputChange('ingredients', text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Instructions"
-              value={formData.instructions}
-              onChangeText={(text) => handleInputChange('instructions', text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Dietary Tags"
-              value={formData.dietaryTags}
-              onChangeText={(text) => handleInputChange('dietaryTags', text)}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Image URL"
-              value={formData.imageUrl}
-              onChangeText={(text) => handleInputChange('imageUrl', text)}
-            />
-
-            <TouchableOpacity style={styles.button} onPress={handlePostSubmit}>
-              <Text style={styles.buttonText}>Post</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.buttonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
-}
+};
 
 export default Home;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 40,
-    marginBottom: 20,
+    padding: 16,
+    backgroundColor: '#fff',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 10,
   },
-  button: {
-    backgroundColor: '#FF6347',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#fff',
+  subtitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  horizontalLine: {
-    width: '100%',
-    height: 3,
-    backgroundColor: '#ccc',
-    marginVertical: 20,
-  },
-  postsList: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  postBox: {
-    padding: 15,
+    textAlign: 'center',
     marginBottom: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#f9f9f9',
   },
-  postTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  postText: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 5,
-  },
-  modalContainer: {
-    flex: 1,
+  boxContainer: {
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    width: '100%',
+    paddingHorizontal: 10,
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    padding: 20,
+  box: {
+    width: '40%', // Adjusted to fit two boxes side by side
+    backgroundColor: '#f5f5f5',
     borderRadius: 10,
-    width: '80%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  input: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    marginBottom: 10,
-    paddingLeft: 8,
-    borderRadius: 5,
-  },
-  closeButton: {
-    backgroundColor: '#808080',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 5,
-    marginTop: 10,
+    padding: 16,
+    marginHorizontal: 10,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  boxIcon: {
+    fontSize: 40,
+    marginBottom: 8,
+  },
+  boxTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  boxDescription: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#666',
   },
 });
