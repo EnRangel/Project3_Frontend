@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Install this if not already
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -14,12 +15,9 @@ const Login = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      console.log('Missing fields:', { email, password });
-      Alert.alert('Error', 'Please fill out both fields.');
+      Alert.alert('Error', 'Please fill out both fields.', [{ text: 'OK' }]);
       return;
     }
-
-    console.log('Attempting to log in with:', { email, password });
 
     try {
       const response = await fetch('http://10.0.2.2:8080/api/auth/login', {
@@ -29,22 +27,26 @@ const Login = ({ navigation }) => {
         credentials: 'include', // For cookies and session storage
       });
 
-      console.log('API Response Status:', response.status);
-      const data = await response.json();
-      console.log('API Response Data:', data);
-
       if (response.ok) {
-        Alert.alert('Login Successful', `Welcome, ${data.user.username}`);
-        console.log('Navigating to Home with user:', data.user);
-        // Navigate to the Home screen
-        navigation.replace('Home', { user: data.user });
+        const data = await response.json();
+        await AsyncStorage.setItem('loggedInUser', JSON.stringify(data.user)); // Save user info
+        Alert.alert('Login Successful', `Welcome, ${data.user.username}`, [
+          {
+            text: 'OK',
+            onPress: () => navigation.replace('Home', { user: data.user }),
+          },
+        ]);
       } else {
-        console.error('Login Failed:', data.message || 'Invalid credentials');
-        Alert.alert('Login Failed', data.message || 'Invalid credentials');
+        const data = await response.json();
+        Alert.alert('Login Failed', data.message || 'Invalid credentials', [
+          { text: 'OK' },
+        ]);
       }
     } catch (error) {
       console.error('Error during login:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert('Error', 'Something went wrong. Please try again later.', [
+        { text: 'OK' },
+      ]);
     }
   };
 
@@ -58,10 +60,7 @@ const Login = ({ navigation }) => {
         keyboardType="email-address"
         autoCapitalize="none"
         value={email}
-        onChangeText={(value) => {
-          console.log('Email input changed:', value);
-          setEmail(value);
-        }}
+        onChangeText={setEmail}
       />
 
       <TextInput
@@ -70,10 +69,7 @@ const Login = ({ navigation }) => {
         secureTextEntry
         autoCapitalize="none"
         value={password}
-        onChangeText={(value) => {
-          console.log('Password input changed:', value);
-          setPassword(value);
-        }}
+        onChangeText={setPassword}
       />
 
       <TouchableOpacity style={styles.button} onPress={handleLogin}>

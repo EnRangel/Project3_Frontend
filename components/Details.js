@@ -77,33 +77,65 @@ const Details = ({ route, navigation }) => {
       setLoading(false);
     }
   };
+  // Function to fetch comments
+const fetchComments = async () => {
+  try {
+    const response = await fetch(`http://10.0.2.2:8080/recipes/${recipeId}/comments`, {
+      credentials: 'include',
+    });
 
-  const handleAddComment = async () => {
-    if (!newComment.trim()) {
-      Alert.alert('Error', 'Comment cannot be empty.');
-      return;
+    if (!response.ok) {
+      throw new Error('Failed to fetch comments.');
     }
 
-    try {
-      const response = await fetch(`http://10.0.2.2:8080/recipes/${recipeId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ content: newComment }),
-      });
+    const commentsData = await response.json();
+    setComments(commentsData); // Update the comments state
+    console.log('Comments updated:', commentsData);
+  } catch (err) {
+    console.error('Error fetching comments:', err);
+    Alert.alert('Error', 'Could not refresh comments.');
+  }
+};
 
-      if (!response.ok) {
-        throw new Error('Failed to add comment.');
-      }
+const handleAddComment = async () => {
+  if (!newComment.trim()) {
+    Alert.alert('Error', 'Comment cannot be empty.');
+    return;
+  }
 
-      setNewComment('');
-      setShowAddCommentModal(false);
-      await fetchRecipeDetails(); // Refresh comments
-    } catch (err) {
-      console.error('Error adding comment:', err);
-      Alert.alert('Error', 'Could not add comment.');
+  try {
+    const response = await fetch(`http://10.0.2.2:8080/recipes/${recipeId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ content: newComment }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to add comment.');
     }
-  };
+
+    // Fetch the updated comments list
+    const commentsResponse = await fetch(`http://10.0.2.2:8080/recipes/${recipeId}/comments`, {
+      credentials: 'include',
+    });
+
+    if (!commentsResponse.ok) {
+      throw new Error('Failed to fetch updated comments.');
+    }
+
+    const updatedComments = await commentsResponse.json();
+    setComments(updatedComments); // Update the comments list
+    setNewComment(''); // Clear the input field
+    setShowAddCommentModal(false); // Close the modal
+  } catch (err) {
+    console.error('Error adding comment:', err);
+    Alert.alert('Error', 'Could not add comment.');
+  }
+};
+
+
+  
 
   const handleEditComment = async () => {
     if (!editCommentContent.trim()) {
@@ -162,13 +194,19 @@ const Details = ({ route, navigation }) => {
         throw new Error('Failed to add recipe to favorites.');
       }
   
+      // Ensure favoritesCount is treated as a number
+      setRecipe((prevRecipe) => ({
+        ...prevRecipe,
+        favoritesCount: (parseInt(prevRecipe.favoritesCount, 10) || 0) + 1,
+      }));
       setIsFavorite(true);
-      await fetchRecipeDetails(); // Refresh details to get the updated favorites count
     } catch (err) {
       console.error('Error adding to favorites:', err);
       Alert.alert('Error', 'Could not add recipe to favorites.');
     }
   };
+  
+  
   
   
 
@@ -183,8 +221,12 @@ const Details = ({ route, navigation }) => {
         throw new Error('Failed to remove recipe from favorites.');
       }
   
+      // Update the local state for favorites
+      setRecipe((prevRecipe) => ({
+        ...prevRecipe,
+        favoritesCount: Math.max((prevRecipe.favoritesCount || 1) - 1, 0),
+      }));
       setIsFavorite(false);
-      await fetchRecipeDetails(); // Refresh details to get the updated favorites count
     } catch (err) {
       console.error('Error removing from favorites:', err);
       Alert.alert('Error', 'Could not remove recipe from favorites.');
@@ -193,32 +235,52 @@ const Details = ({ route, navigation }) => {
   
   
   
+  
 
   const handleEditRecipe = async () => {
     if (recipe?.ownerId !== loggedInUserId) {
       Alert.alert('Error', 'You are not authorized to edit this recipe.');
+      console.log('Unauthorized Edit Attempt:', {
+        ownerId: recipe?.ownerId,
+        loggedInUserId,
+      });
       return;
     }
-
+  
     try {
+      console.log('Starting edit recipe request with data:', editRecipeData);
+  
       const response = await fetch(`http://10.0.2.2:8080/recipes/${recipeId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(editRecipeData),
       });
-
+  
+      console.log('Server Response:', {
+        status: response.status,
+        statusText: response.statusText,
+      });
+  
       if (!response.ok) {
+        const errorDetails = await response.text();
+        console.error('Response Error Details:', errorDetails);
         throw new Error('Failed to edit recipe.');
       }
-
+  
+      const updatedRecipe = await response.json();
+      console.log('Successfully Updated Recipe:', updatedRecipe);
+  
+      setRecipe(updatedRecipe); // Update the recipe in the state
       setShowEditRecipeModal(false);
-      await fetchRecipeDetails(); // Refresh recipe details
+      console.log('Modal closed and state updated successfully.');
     } catch (err) {
       console.error('Error editing recipe:', err);
-      Alert.alert('Error', 'Could not edit recipe.');
+      Alert.alert('Error', 'Could not edit recipe. Please try again.');
     }
   };
+  
+  
 
   const handleDeleteRecipe = async () => {
     if (recipe?.ownerId !== loggedInUserId) {
@@ -245,8 +307,18 @@ const Details = ({ route, navigation }) => {
 
   const renderComment = ({ item }) => (
     <View style={styles.comment}>
-      <Text>{item.content}</Text>
-      <Text style={styles.commentMeta}>Posted by: {item.username}</Text>
+      <Text style={styles.commentContent}>{item.content}</Text>
+      <Text style={styles.commentMeta}>
+        Posted by: {item.username || 'Anonymous'}
+      </Text>
+      <Text style={styles.commentMeta}>
+        Posted on: {new Date(item.createdAt).toLocaleString()}
+      </Text>
+      {item.editedAt && item.editedAt !== item.createdAt && (
+        <Text style={styles.commentMeta}>
+          Edited on: {new Date(item.editedAt).toLocaleString()}
+        </Text>
+      )}
       {loggedInUserId === item.userId && (
         <>
           <Button
@@ -269,6 +341,7 @@ const Details = ({ route, navigation }) => {
       )}
     </View>
   );
+  
 
   if (loading) {
     return (
@@ -294,38 +367,43 @@ const Details = ({ route, navigation }) => {
     <FlatList
   data={comments}
   renderItem={renderComment}
-  keyExtractor={(item) => item.id}
+  keyExtractor={(item, index) => item.id || index.toString()} // Ensure unique key for each item
   ListHeaderComponent={
     <View style={styles.detailsContainer}>
       <Text style={styles.title}>{recipe?.title}</Text>
-      <Text style={styles.text}>Ingredients: {recipe?.ingredients}</Text>
-      <Text style={styles.text}>Instructions: {recipe?.instructions}</Text>
+  
       <Text style={styles.text}>
-        {Array.isArray(recipe?.dietaryTags) ? recipe?.dietaryTags.join(', ') : 'No dietary tags'}
+        <Text style={styles.label}>Ingredients:</Text> {recipe?.ingredients}
       </Text>
+  
       <Text style={styles.text}>
-        Favorites Count: {recipe?.favoritesCount || 0}
-      </Text> 
+        <Text style={styles.label}>Instructions:</Text> {recipe?.instructions}
+      </Text>
+  
+      <Text style={styles.text}>
+        <Text style={styles.label}>Dietary Tags:</Text> {Array.isArray(recipe?.dietaryTags) ? recipe?.dietaryTags.join(', ') : 'No dietary tags'}
+      </Text>
+  
+      <Text style={styles.text}>
+        <Text style={styles.label}>Favorites Count:</Text> {recipe?.favoritesCount || 0}
+      </Text>
+  
       {recipe?.imageUrl && (
         <Image source={{ uri: recipe?.imageUrl }} style={styles.image} />
       )}
+  
       {isFavorite ? (
         <Button
           title="Remove from Favorites"
-          onPress={async () => {
-            await handleRemoveFromFavorites();
-            await fetchRecipeDetails(); // Refresh details to ensure favorites count updates
-          }}
+          onPress={handleRemoveFromFavorites}
         />
       ) : (
         <Button
           title="Add to Favorites"
-          onPress={async () => {
-            await handleAddToFavorites();
-            await fetchRecipeDetails(); // Refresh details to ensure favorites count updates
-          }}
+          onPress={handleAddToFavorites}
         />
       )}
+  
       {recipe?.ownerId === loggedInUserId && (
         <>
           <Button title="Edit Recipe" onPress={() => setShowEditRecipeModal(true)} />
@@ -337,8 +415,10 @@ const Details = ({ route, navigation }) => {
   ListFooterComponent={
     <Button title="Add Comment" onPress={() => setShowAddCommentModal(true)} />
   }
-  ListEmptyComponent={<Text>No comments yet. Be the first to comment!</Text>}
-/>
+  ListEmptyComponent={<Text style={styles.emptyText}>No comments yet. Be the first to comment!</Text>}
+  />
+  
+
 
       {/* Add Comment Modal */}
       <Modal visible={showAddCommentModal} transparent animationType="slide">
@@ -379,29 +459,58 @@ const Details = ({ route, navigation }) => {
 
       {/* Edit Recipe Modal */}
       <Modal visible={showEditRecipeModal} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Edit Recipe Title"
-            value={editRecipeData.title || recipe?.title}
-            onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, title: text }))}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Edit Ingredients"
-            value={editRecipeData.ingredients || recipe?.ingredients}
-            onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, ingredients: text }))}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Edit Instructions"
-            value={editRecipeData.instructions || recipe?.instructions}
-            onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, instructions: text }))}
-          />
-          <Button title="Save" onPress={handleEditRecipe} />
-          <Button title="Cancel" color="red" onPress={() => setShowEditRecipeModal(false)} />
-        </View>
-      </Modal>
+  <View style={styles.modalContainer}>
+    <Text style={styles.label}>Recipe Title</Text>
+    <TextInput
+      style={styles.input}
+      placeholder="Edit Recipe Title"
+      value={editRecipeData.title !== undefined ? editRecipeData.title : recipe?.title || ''}
+      onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, title: text }))}
+    />
+    <Text style={styles.label}>Ingredients</Text>
+    <TextInput
+      style={styles.input}
+      placeholder="Edit Ingredients"
+      value={editRecipeData.ingredients !== undefined ? editRecipeData.ingredients : recipe?.ingredients || ''}
+      onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, ingredients: text }))}
+    />
+    <Text style={styles.label}>Instructions</Text>
+    <TextInput
+      style={styles.input}
+      placeholder="Edit Instructions"
+      value={editRecipeData.instructions !== undefined ? editRecipeData.instructions : recipe?.instructions || ''}
+      onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, instructions: text }))}
+    />
+    <Text style={styles.label}>Dietary Tags</Text>
+    <TextInput
+      style={styles.input}
+      placeholder="Edit Dietary Tags (comma-separated)"
+      value={
+        editRecipeData.dietaryTags !== undefined
+          ? editRecipeData.dietaryTags.join(', ')
+          : recipe?.dietaryTags?.join(', ') || ''
+      }
+      onChangeText={(text) => setEditRecipeData((prev) => ({
+        ...prev,
+        dietaryTags: text ? text.split(',').map((tag) => tag.trim()) : [],
+      }))}
+    />
+    <Text style={styles.label}>Image URL</Text>
+    <TextInput
+      style={styles.input}
+      placeholder="Edit Image URL"
+      value={editRecipeData.imageUrl !== undefined ? editRecipeData.imageUrl : recipe?.imageUrl || ''}
+      onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, imageUrl: text }))}
+    />
+    <Button title="Save" onPress={handleEditRecipe} />
+    <Button title="Cancel" color="red" onPress={() => setShowEditRecipeModal(false)} />
+  </View>
+</Modal>
+
+
+
+
+      
 
       {/* Delete Recipe Modal */}
       <Modal visible={showDeleteRecipeModal} transparent animationType="slide">

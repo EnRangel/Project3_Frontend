@@ -1,60 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Button, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 const Home = ({ navigation }) => {
-  const [user, setUser] = useState(null); // State to hold user data
-  const [error, setError] = useState('');
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchUserSession = async () => {
       try {
         const response = await fetch('http://10.0.2.2:8080/api/users/session', {
           method: 'GET',
-          credentials: 'include', // Include cookies for session handling
+          credentials: 'include',
         });
 
         if (response.ok) {
           const userData = await response.json();
           setUser(userData);
         } else {
-          throw new Error('Failed to fetch user data.');
+          throw new Error('Failed to fetch user session.');
         }
       } catch (err) {
-        console.error('Error fetching user data:', err);
-        setError('Failed to load user data. Please log in again.');
+        console.error('Error fetching user session:', err);
+        navigation.replace('Login');
       }
     };
 
-    fetchUserData();
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      const response = await fetch('http://10.0.2.2:8080/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        Alert.alert('Logout Successful', 'You have been logged out successfully.');
-        navigation.replace('Login');
-      } else {
-        throw new Error('Failed to log out.');
-      }
-    } catch (err) {
-      console.error('Error during logout:', err);
-      Alert.alert('Error', 'Failed to log out. Please try again.');
-    }
-  };
-
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.error}>{error}</Text>
-        <Button title="Go to Login" onPress={() => navigation.replace('Login')} />
-      </View>
-    );
-  }
+    fetchUserSession();
+  }, [navigation]);
 
   if (!user) {
     return (
@@ -66,9 +37,31 @@ const Home = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome {user.username}!</Text>
-      <Text style={styles.subtitle}>Email: {user.email}</Text>
-      <Button title="Logout" onPress={handleLogout} />
+      <Text style={styles.title}>Welcome, {user.username}!</Text>
+      <Text style={styles.subtitle}>
+        Explore and share recipes with the community. Discover new flavors and connect with food lovers.
+      </Text>
+
+      {/* Centered Side-by-Side Boxes */}
+      <View style={styles.boxContainer}>
+        <TouchableOpacity
+          style={styles.box}
+          onPress={() => navigation.navigate('Feed')}
+        >
+          <Text style={styles.boxIcon}>🍴</Text>
+          <Text style={styles.boxTitle}>Explore Recipes</Text>
+          <Text style={styles.boxDescription}>Find recipes from around the world.</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.box}
+          onPress={() => navigation.navigate('RecipeForm')}
+        >
+          <Text style={styles.boxIcon}>📖</Text>
+          <Text style={styles.boxTitle}>Share a Recipe</Text>
+          <Text style={styles.boxDescription}>Contribute your favorite recipes to the community.</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -86,14 +79,48 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    textAlign: 'center',
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
+    textAlign: 'center',
     marginBottom: 20,
   },
-  error: {
-    color: 'red',
-    marginBottom: 10,
+  boxContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 10,
+  },
+  box: {
+    width: '40%', // Adjusted to fit two boxes side by side
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    padding: 16,
+    marginHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  boxIcon: {
+    fontSize: 40,
+    marginBottom: 8,
+  },
+  boxTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  boxDescription: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#666',
   },
 });

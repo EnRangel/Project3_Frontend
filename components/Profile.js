@@ -11,25 +11,25 @@ import {
 } from 'react-native';
 
 const Profile = ({ navigation }) => {
-  const [user, setUser] = useState(null); // State to hold user data
-  const [favorites, setFavorites] = useState([]); // State for favorites
-  const [isEditing, setIsEditing] = useState(false); // State for editing mode
-  const [formData, setFormData] = useState({ username: '', email: '', password: '' }); // Form data for editing
+  const [user, setUser] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({ username: '', email: '', password: '' });
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const response = await fetch('http://10.0.2.2:8080/api/users/session', {
           method: 'GET',
-          credentials: 'include', // Include cookies for session handling
+          credentials: 'include',
         });
 
         if (response.ok) {
           const userData = await response.json();
           setUser(userData);
-          setFavorites(userData.favorites || []); // Set favorites or empty array
+          setFavorites(userData.favorites || []);
           setFormData({
             username: userData.username,
             email: userData.email,
@@ -69,7 +69,7 @@ const Profile = ({ navigation }) => {
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
     setError('');
-    setSuccess('');
+    setSuccessMessage('');
   };
 
   const handleInputChange = (name, value) => {
@@ -90,13 +90,16 @@ const Profile = ({ navigation }) => {
 
       if (response.ok) {
         const result = await response.json();
-        setSuccess(result.message);
+        setSuccessMessage(result.message || 'Profile updated successfully!');
         setUser((prev) => ({
           ...prev,
           username: formData.username,
           email: formData.email,
         }));
         setIsEditing(false);
+
+        // Clear the success message after 3 seconds
+        setTimeout(() => setSuccessMessage(''), 3000);
       } else {
         const errorData = await response.json();
         setError(errorData.message || 'Failed to update profile.');
@@ -117,7 +120,11 @@ const Profile = ({ navigation }) => {
   }
 
   if (!user) {
-    return <View style={styles.container}><Text>Loading profile...</Text></View>;
+    return (
+      <View style={styles.container}>
+        <Text>Loading profile...</Text>
+      </View>
+    );
   }
 
   return (
@@ -131,11 +138,11 @@ const Profile = ({ navigation }) => {
         </TouchableOpacity>
       </View>
       <View style={styles.profileContent}>
-        <Text style={styles.title}>Welcome, {user.username}</Text>
+        <Text style={styles.title}>Hello {user.username}, here’s your profile!</Text>
         {isEditing ? (
           <View>
             {error && <Text style={styles.error}>{error}</Text>}
-            {success && <Text style={styles.success}>{success}</Text>}
+            {successMessage && <Text style={styles.success}>{successMessage}</Text>}
             <TextInput
               style={styles.input}
               placeholder="Username"
@@ -163,10 +170,14 @@ const Profile = ({ navigation }) => {
             <Text style={styles.subTitle}>Your Favorites:</Text>
             {favorites.length > 0 ? (
               favorites.map((recipe, index) => (
-                <View key={index} style={styles.recipe}>
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => navigation.navigate('Details', { recipeId: recipe.id })}
+                  style={styles.recipe}
+                >
                   <Text style={styles.recipeTitle}>{recipe.title}</Text>
                   <Text>{recipe.description}</Text>
-                </View>
+                </TouchableOpacity>
               ))
             ) : (
               <Text>You have no favorite recipes yet.</Text>
@@ -179,7 +190,6 @@ const Profile = ({ navigation }) => {
 };
 
 export default Profile;
-
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
@@ -215,9 +225,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
+    justifyContent: 'center', // Center content vertically
+    alignItems: 'center', // Center content horizontally
+    flexDirection: 'column', // Ensure content stacks properly if needed
   },
   recipeTitle: {
     fontWeight: 'bold',
+    color: '#4285F4',
   },
   input: {
     borderWidth: 1,
@@ -236,5 +250,8 @@ const styles = StyleSheet.create({
   success: {
     color: 'green',
     marginBottom: 12,
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
