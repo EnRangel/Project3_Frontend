@@ -58,9 +58,11 @@ const Details = ({ route, navigation }) => {
 
       // Handle dietaryTags if it's a string
       const dietaryTags = Array.isArray(recipeData.dietaryTags)
-        ? recipeData.dietaryTags
-        : recipeData.dietaryTags ? recipeData.dietaryTags.split(',').map(tag => tag.trim()) : [];
-
+      ? recipeData.dietaryTags
+      : recipeData.dietaryTags
+      ? recipeData.dietaryTags.split(',').map((tag) => tag.trim())
+      : [];
+    
       setRecipe({
         ...recipeData,
         dietaryTags: dietaryTags, // Ensure dietaryTags is an array
@@ -236,49 +238,49 @@ const handleAddComment = async () => {
   
   
   
-
   const handleEditRecipe = async () => {
     if (recipe?.ownerId !== loggedInUserId) {
       Alert.alert('Error', 'You are not authorized to edit this recipe.');
-      console.log('Unauthorized Edit Attempt:', {
-        ownerId: recipe?.ownerId,
-        loggedInUserId,
-      });
       return;
     }
   
     try {
-      console.log('Starting edit recipe request with data:', editRecipeData);
+      // Ensure dietaryTags is properly processed
+      const updatedData = {
+        ...editRecipeData,
+        dietaryTags: Array.isArray(editRecipeData.dietaryTags)
+          ? editRecipeData.dietaryTags.join(', ') // Convert array to string
+          : recipe?.dietaryTags?.join(', ') || '', // Fallback to existing recipe tags
+      };
   
       const response = await fetch(`http://10.0.2.2:8080/recipes/${recipeId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(editRecipeData),
-      });
-  
-      console.log('Server Response:', {
-        status: response.status,
-        statusText: response.statusText,
+        body: JSON.stringify(updatedData),
       });
   
       if (!response.ok) {
         const errorDetails = await response.text();
-        console.error('Response Error Details:', errorDetails);
-        throw new Error('Failed to edit recipe.');
+        throw new Error(`Failed to edit recipe. Details: ${errorDetails}`);
       }
   
-      const updatedRecipe = await response.json();
-      console.log('Successfully Updated Recipe:', updatedRecipe);
+      // Fetch updated recipe details
+      await fetchRecipeDetails();
   
-      setRecipe(updatedRecipe); // Update the recipe in the state
+      // Reset modal and edit data
+      setEditRecipeData({});
       setShowEditRecipeModal(false);
-      console.log('Modal closed and state updated successfully.');
+      Alert.alert('Success', 'Recipe updated successfully!');
     } catch (err) {
       console.error('Error editing recipe:', err);
       Alert.alert('Error', 'Could not edit recipe. Please try again.');
     }
   };
+  
+  
+  
+  
   
   
 
@@ -381,8 +383,12 @@ const handleAddComment = async () => {
       </Text>
   
       <Text style={styles.text}>
-        <Text style={styles.label}>Dietary Tags:</Text> {Array.isArray(recipe?.dietaryTags) ? recipe?.dietaryTags.join(', ') : 'No dietary tags'}
-      </Text>
+  <Text style={styles.label}>Dietary Tags:</Text>{' '}
+  {Array.isArray(recipe?.dietaryTags) && recipe?.dietaryTags.length > 0
+    ? recipe?.dietaryTags.join(', ')
+    : 'No dietary tags'}
+</Text>
+
   
       <Text style={styles.text}>
         <Text style={styles.label}>Favorites Count:</Text> {recipe?.favoritesCount || 0}
@@ -481,20 +487,22 @@ const handleAddComment = async () => {
       value={editRecipeData.instructions !== undefined ? editRecipeData.instructions : recipe?.instructions || ''}
       onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, instructions: text }))}
     />
-    <Text style={styles.label}>Dietary Tags</Text>
-    <TextInput
-      style={styles.input}
-      placeholder="Edit Dietary Tags (comma-separated)"
-      value={
-        editRecipeData.dietaryTags !== undefined
-          ? editRecipeData.dietaryTags.join(', ')
-          : recipe?.dietaryTags?.join(', ') || ''
-      }
-      onChangeText={(text) => setEditRecipeData((prev) => ({
-        ...prev,
-        dietaryTags: text ? text.split(',').map((tag) => tag.trim()) : [],
-      }))}
-    />
+  <Text style={styles.label}>Dietary Tags</Text>
+<TextInput
+  style={styles.input}
+  placeholder="Edit Dietary Tags (comma-separated)"
+  value={
+    editRecipeData.dietaryTags !== undefined
+      ? editRecipeData.dietaryTags.join(', ') // Convert array to comma-separated string
+      : recipe?.dietaryTags?.join(', ') || '' // Fallback to current recipe tags
+  }
+  onChangeText={(text) =>
+    setEditRecipeData((prev) => ({
+      ...prev,
+      dietaryTags: text ? text.split(',').map((tag) => tag.trim()) : [], // Split string into array
+    }))
+  }
+/>
     <Text style={styles.label}>Image URL</Text>
     <TextInput
       style={styles.input}
