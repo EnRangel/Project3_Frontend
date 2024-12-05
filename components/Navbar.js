@@ -10,7 +10,6 @@ const Navbar = () => {
   const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
 
   const handleLogout = () => {
-    // Clear session or token logic
     Alert.alert(
       'Logout',
       'Are you sure you want to log out?',
@@ -19,7 +18,6 @@ const Navbar = () => {
         {
           text: 'Logout',
           onPress: () => {
-            // Perform logout operations (e.g., clearing session storage)
             console.log('User logged out');
             toggleDropdown();
             navigation.navigate('Login'); // Navigate to login page
@@ -34,36 +32,64 @@ const Navbar = () => {
     <View style={styles.navbar}>
       <Text style={styles.title}>MyApp</Text>
 
-      {/* Menu button to toggle dropdown */}
       <TouchableOpacity onPress={toggleDropdown}>
         <Text style={styles.menuButton}>Menu ▼</Text>
       </TouchableOpacity>
 
-      {/* Full Dropdown Modal */}
       <Modal
         isVisible={isDropdownVisible}
-        backdropOpacity={0.3}
+        backdropOpacity={0.5}
         onBackdropPress={toggleDropdown}
+        animationIn="fadeInDown"
+        animationOut="fadeOutUp"
         style={styles.modal}
       >
         <View style={styles.dropdown}>
-          <TouchableOpacity onPress={() => { navigation.navigate('Home'); toggleDropdown(); }}>
-            <Text style={styles.dropdownItem}>Home</Text>
+          <TouchableOpacity
+            style={styles.dropdownItemContainer}
+            onPress={() => {
+              navigation.navigate('Home');
+              toggleDropdown();
+            }}
+          >
+            <Text style={styles.dropdownItem}>🏠 Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { navigation.navigate('Feed'); toggleDropdown(); }}>
-            <Text style={styles.dropdownItem}>Feed</Text>
+
+          <TouchableOpacity
+            style={styles.dropdownItemContainer}
+            onPress={() => {
+              navigation.navigate('Feed');
+              toggleDropdown();
+            }}
+          >
+            <Text style={styles.dropdownItem}>📢 Feed</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { navigation.navigate('Profile'); toggleDropdown(); }}>
-            <Text style={styles.dropdownItem}>Profile</Text>
+
+          <TouchableOpacity
+            style={styles.dropdownItemContainer}
+            onPress={() => {
+              navigation.navigate('Profile');
+              toggleDropdown();
+            }}
+          >
+            <Text style={styles.dropdownItem}>👤 Profile</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { navigation.navigate('RecipeForm'); toggleDropdown(); }}>
-            <Text style={styles.dropdownItem}>Add Recipe</Text>
+
+          <TouchableOpacity
+            style={styles.dropdownItemContainer}
+            onPress={() => {
+              navigation.navigate('RecipeForm');
+              toggleDropdown();
+            }}
+          >
+            <Text style={styles.dropdownItem}>📖 Add Recipe</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { navigation.navigate('RecipeList'); toggleDropdown(); }}>
-            <Text style={styles.dropdownItem}>Recipe List</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout}>
-            <Text style={[styles.dropdownItem, styles.logout]}>Logout</Text>
+
+          <TouchableOpacity
+            style={styles.dropdownItemContainer}
+            onPress={handleLogout}
+          >
+            <Text style={[styles.dropdownItem, styles.logout]}>🚪 Logout</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -76,11 +102,16 @@ export default Navbar;
 const styles = StyleSheet.create({
   navbar: {
     height: 60,
-    backgroundColor: '#333',
+    backgroundColor: '#1f1f1f',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   title: {
     color: '#fff',
@@ -96,29 +127,33 @@ const styles = StyleSheet.create({
     margin: 0,
   },
   dropdown: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 15,
-    paddingBottom: 25,
-    alignItems: 'flex-start',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     position: 'absolute',
-    top: 60,
-    right: 10,
-    width: 300,
-    elevation: 5,
+    top: 80,
+    right: 20,
+    width: '80%',
+    elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    alignItems: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+  },
+  dropdownItemContainer: {
+    width: '100%',
+    marginVertical: 8,
+    alignItems: 'flex-start',
   },
   dropdownItem: {
-    paddingVertical: 10,
-    fontSize: 16,
+    fontSize: 18,
     color: '#333',
+    fontWeight: '600',
+    paddingVertical: 5,
   },
   logout: {
     color: 'red',
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 });

@@ -7,15 +7,43 @@ const SignUp = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (!username || !email || !password) {
       Alert.alert('Error', 'Please fill out all fields.');
       return;
     }
-    // Add sign-up logic here (e.g., API call to create a new user)
-    Alert.alert('Sign Up Successful', `Welcome, ${username}!`);
-    navigation.navigate('Login'); // Navigate back to login after successful sign-up
+  
+    try {
+      const response = await fetch('http://10.0.2.2:8080/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: username, email, password }),
+      });
+  
+      const text = await response.text(); // Read raw response
+      const data = text ? JSON.parse(text) : null; // Parse JSON if not empty
+  
+      if (response.ok) {
+        Alert.alert(
+          'Account Created',
+          'Your account has been successfully created. Please log in to continue.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate('Login'), // Navigate after the alert
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Sign-Up Failed', data?.message || 'Unable to create an account. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error during sign-up:', error);
+      Alert.alert('Sign-Up Failed', 'Something went wrong. Please try again later.');
+    }
   };
+  
+  
 
   return (
     <View style={styles.container}>
