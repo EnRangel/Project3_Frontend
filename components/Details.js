@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Modal,
   KeyboardAvoidingView,
+  TouchableOpacity,
   Platform,
   Image,
 } from 'react-native';
@@ -306,7 +307,6 @@ const handleAddComment = async () => {
       Alert.alert('Error', 'Could not delete recipe.');
     }
   };
-
   const renderComment = ({ item }) => (
     <View style={styles.comment}>
       <Text style={styles.commentContent}>{item.content}</Text>
@@ -322,29 +322,31 @@ const handleAddComment = async () => {
         </Text>
       )}
       {loggedInUserId === item.userId && (
-        <>
-          <Button
-            title="Edit"
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, styles.editButton]}
             onPress={() => {
               setCommentToEdit(item);
               setEditCommentContent(item.content);
               setShowEditCommentModal(true);
             }}
-          />
-          <Button
-            title="Delete"
-            color="red"
+          >
+            <Text style={styles.buttonText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.deleteButton]}
             onPress={() => {
               setCommentToDelete(item);
               setShowDeleteCommentModal(true);
             }}
-          />
-        </>
+          >
+            <Text style={styles.buttonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
   
-
   if (loading) {
     return (
       <View style={styles.center}>
@@ -352,7 +354,7 @@ const handleAddComment = async () => {
       </View>
     );
   }
-
+  
   if (error) {
     return (
       <View style={styles.center}>
@@ -360,64 +362,84 @@ const handleAddComment = async () => {
       </View>
     );
   }
-
+  
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
     >
-    <FlatList
-  data={comments}
-  renderItem={renderComment}
-  keyExtractor={(item, index) => item.id || index.toString()} // Ensure unique key for each item
-  ListHeaderComponent={
-    <View style={styles.detailsContainer}>
-      <Text style={styles.title}>{recipe?.title}</Text>
-  
-      <Text style={styles.text}>
-        <Text style={styles.label}>Ingredients:</Text> {recipe?.ingredients}
-      </Text>
-  
-      <Text style={styles.text}>
-        <Text style={styles.label}>Instructions:</Text> {recipe?.instructions}
-      </Text>
-  
-      <Text style={styles.text}>
-  <Text style={styles.label}>Dietary Tags:</Text>{' '}
-  {Array.isArray(recipe?.dietaryTags) && recipe?.dietaryTags.length > 0
-    ? recipe?.dietaryTags.join(', ')
-    : 'No dietary tags'}
-</Text>
+      <FlatList
+        data={comments.slice().reverse()} // Reverse comments for newest to appear last
+        renderItem={renderComment}
+        keyExtractor={(item, index) => item.id || index.toString()}
 
-  
-      <Text style={styles.text}>
-        <Text style={styles.label}>Favorites Count:</Text> {recipe?.favoritesCount || 0}
-      </Text>
-  
-      {recipe?.imageUrl && (
-        <Image source={{ uri: recipe?.imageUrl }} style={styles.image} />
-      )}
-  
-      {isFavorite ? (
-        <Button
-          title="Remove from Favorites"
-          onPress={handleRemoveFromFavorites}
-        />
-      ) : (
-        <Button
-          title="Add to Favorites"
-          onPress={handleAddToFavorites}
-        />
-      )}
-  
-      {recipe?.ownerId === loggedInUserId && (
-        <>
-          <Button title="Edit Recipe" onPress={() => setShowEditRecipeModal(true)} />
-          <Button title="Delete Recipe" color="red" onPress={() => setShowDeleteRecipeModal(true)} />
-        </>
-      )}
-    </View>
-  }
+        // css for 
+        ListHeaderComponent={
+          <View style={styles.detailsContainer}>
+            <Text style={styles.title}>{recipe?.title}</Text>
+        
+            <Text style={styles.text}>
+              <Text style={styles.label}>Ingredients:</Text> {recipe?.ingredients}
+            </Text>
+        
+            <Text style={styles.text}>
+              <Text style={styles.label}>Instructions:</Text> {recipe?.instructions}
+            </Text>
+        
+            <Text style={styles.text}>
+              <Text style={styles.label}>Dietary Tags:</Text>{' '}
+              {Array.isArray(recipe?.dietaryTags) && recipe?.dietaryTags.length > 0
+                ? recipe?.dietaryTags.join(', ')
+                : 'No dietary tags'}
+            </Text>
+        
+            <Text style={styles.text}>
+              <Text style={styles.label}>Favorites Count:</Text> {recipe?.favoritesCount || 0}
+            </Text>
+        
+            {recipe?.imageUrl && (
+              <Image source={{ uri: recipe?.imageUrl }} style={styles.image} />
+            )}
+        
+            <View style={styles.buttonContainer}>
+              {isFavorite ? (
+                <TouchableOpacity
+                  style={[styles.button, styles.favoriteButton]}
+                  onPress={handleRemoveFromFavorites}
+                >
+                  <Text style={styles.buttonText}>Unfavorite</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.button, styles.favoriteButton]}
+                  onPress={handleAddToFavorites}
+                >
+                  <Text style={styles.buttonText}>Favorite</Text>
+                </TouchableOpacity>
+              )}
+        
+              {recipe?.ownerId === loggedInUserId && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.button, styles.editButton]}
+                    onPress={() => setShowEditRecipeModal(true)}
+                  >
+                    <Text style={styles.buttonText}>Edit Recipe</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.deleteButton]}
+                    onPress={() => setShowDeleteRecipeModal(true)}
+                  >
+                    <Text style={styles.buttonText}>Delete Recipe</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </View>
+        }
+        
+
+
   ListFooterComponent={
     <Button title="Add Comment" onPress={() => setShowAddCommentModal(true)} />
   }
@@ -533,25 +555,173 @@ const handleAddComment = async () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  detailsContainer: { padding: 16, backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: 'bold' },
-  text: { fontSize: 16, marginVertical: 4 },
-  image: { width: 200, height: 200, marginVertical: 10 },
-  comment: { padding: 8, borderBottomWidth: 1, borderBottomColor: '#ccc' },
-  commentMeta: { fontStyle: 'italic', color: '#555' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f7f8fa' 
+  },
+  detailsContainer: { 
+    padding: 16, 
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    margin: 16,
+  },
+  title: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    color: '#2c3e50', 
+    textAlign: 'center', 
+    marginBottom: 12 
+  },
+  text: { 
+    fontSize: 16, 
+    marginVertical: 4, 
+    color: '#34495e', 
+    lineHeight: 22 
+  },
+  label: { 
+    fontWeight: 'bold', 
+    color: '#2c3e50' 
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    marginVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    resizeMode: 'cover',
+  },
+  comment: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    marginBottom: 16,
+    backgroundColor: '#fdfdfd',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  commentContent: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: '#2c3e50',
+  },
+  commentMeta: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 4,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    marginTop: 8,
+    justifyContent: 'flex-start',
+    flexWrap: 'wrap',
+  },
+  button: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  editButton: {
+    backgroundColor: '#3498db', // Light blue
+  },
+  deleteButton: {
+    backgroundColor: '#e74c3c', // Light red
+  },
+  favoriteButton: {
+    backgroundColor: '#2ecc71', // Green for favorite
+  },
+  unfavoriteButton: {
+    backgroundColor: '#95a5a6', // Gray for unfavorite
+  },
+  hoverButton: {
+    shadowOpacity: 0.3,
+    transform: [{ scale: 1.05 }],
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 20,
-    margin: 20,
     borderRadius: 8,
   },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 8, width: '100%', marginBottom: 10 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  error: { color: 'red', fontSize: 16, textAlign: 'center' },
+  input: {
+    borderWidth: 1,
+    borderColor: '#bdc3c7',
+    padding: 10,
+    width: '100%',
+    marginBottom: 10,
+    borderRadius: 6,
+    backgroundColor: '#ecf0f1',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 10,
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 10,
+  },
+  modalButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    backgroundColor: '#3498db',
+    marginHorizontal: 5,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  modalCancelButton: {
+    backgroundColor: '#e74c3c',
+  },
+  center: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  error: { 
+    color: '#e74c3c', 
+    fontSize: 16, 
+    textAlign: 'center' 
+  },
+  emptyComments: {
+    textAlign: 'center',
+    color: '#7f8c8d',
+    fontStyle: 'italic',
+    marginTop: 16,
+    fontSize: 16,
+  },
 });
+
+
 
 export default Details;
