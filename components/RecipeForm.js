@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-
+import { View, Text, TextInput, Alert, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 const RecipeForm = () => {
     const [title, setTitle] = useState('');
     const [ingredients, setIngredients] = useState('');
@@ -13,37 +13,31 @@ const RecipeForm = () => {
             Alert.alert('Error', 'Please fill in all required fields');
             return;
         }
-
         try {
             const response = await fetch('http://10.0.2.2:8080/recipes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include', // Include session cookies for authentication
+                credentials: 'include',
                 body: JSON.stringify({
-                    title,
-                    ingredients, // Send ingredients as a plain string
-                    instructions, // Send instructions as a plain string
-                    dietaryTags: dietaryTags.split(',').map((tag) => tag.trim()), // Convert to array
-                    imageUrl, // Optional image URL
+                    title: title.trim(),
+                    ingredients: ingredients.trim(),
+                    instructions: instructions.trim(),
+                    dietaryTags: dietaryTags
+                        ? dietaryTags.split(',').map((tag) => tag.trim())
+                        : [],
+                    imageUrl: imageUrl.trim(),
                 }),
             });
 
             if (!response.ok) {
-                // Attempt to parse error message from backend
                 const errorData = await response.json().catch(() => null);
                 throw new Error(errorData?.message || 'Failed to create recipe');
             }
 
-            const result = await response.json().catch(() => null);
-            if (result) {
-                Alert.alert('Success', `Recipe created: ${result.recipe?.title || ''}`, [
-                    { text: 'OK', onPress: () => resetForm() },
-                ]);
-            } else {
-                Alert.alert('Success', 'Recipe created successfully!', [
-                    { text: 'OK', onPress: () => resetForm() },
-                ]);
-            }
+            const result = await response.json();
+            Alert.alert('Success', `Recipe created: ${result.recipe?.title || ''}`, [
+                { text: 'OK', onPress: () => navigation.navigate('Feed') }, // Navigate to Feed after success
+            ]);
         } catch (error) {
             console.error('Error creating recipe:', error);
             Alert.alert('Error', error.message || 'Something went wrong');
@@ -92,7 +86,9 @@ const RecipeForm = () => {
                 value={imageUrl}
                 onChangeText={setImageUrl}
             />
-            <Button title="Submit Recipe" onPress={handleSubmit} />
+            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+                <Text style={styles.submitButtonText}>Submit Recipe</Text>
+            </TouchableOpacity>
         </View>
     );
 };
@@ -103,29 +99,61 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#fff',
+        backgroundColor: '#f7f8fa', // Subtle light gray for a professional look
     },
     heading: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
+        color: '#34495e', // Neutral dark color for text
     },
     input: {
-        height: 40,
-        borderColor: '#ccc',
+        height: 50,
+        borderColor: '#dcdcdc', // Light border color
         borderWidth: 1,
         marginBottom: 15,
-        paddingHorizontal: 10,
-        borderRadius: 5,
+        paddingHorizontal: 15,
+        borderRadius: 8,
+        backgroundColor: '#fff', // White background for contrast
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2, // Light shadow for depth
+        fontSize: 16, // Readable font size
     },
     textArea: {
-        height: 100,
-        borderColor: '#ccc',
+        height: 120,
+        borderColor: '#dcdcdc',
         borderWidth: 1,
         marginBottom: 15,
-        paddingHorizontal: 10,
-        borderRadius: 5,
+        paddingHorizontal: 15,
+        borderRadius: 8,
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
         textAlignVertical: 'top',
+        fontSize: 16,
+    },
+    submitButton: {
+        backgroundColor: '#2ecc71', // Green for submit button
+        paddingVertical: 15,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    submitButtonText: {
+        color: '#fff', // White text for contrast
+        fontSize: 18,
+        fontWeight: 'bold',
     },
 });

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Modal,
   KeyboardAvoidingView,
+  TouchableOpacity,
   Platform,
   Image,
 } from 'react-native';
@@ -300,13 +301,12 @@ const handleAddComment = async () => {
         throw new Error('Failed to delete recipe.');
       }
 
-      navigation.navigate('RecipeList');
+      navigation.navigate('Feed');
     } catch (err) {
       console.error('Error deleting recipe:', err);
       Alert.alert('Error', 'Could not delete recipe.');
     }
   };
-
   const renderComment = ({ item }) => (
     <View style={styles.comment}>
       <Text style={styles.commentContent}>{item.content}</Text>
@@ -322,29 +322,31 @@ const handleAddComment = async () => {
         </Text>
       )}
       {loggedInUserId === item.userId && (
-        <>
-          <Button
-            title="Edit"
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, styles.editButton]}
             onPress={() => {
               setCommentToEdit(item);
               setEditCommentContent(item.content);
               setShowEditCommentModal(true);
             }}
-          />
-          <Button
-            title="Delete"
-            color="red"
+          >
+            <Text style={styles.buttonText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.deleteButton]}
             onPress={() => {
               setCommentToDelete(item);
               setShowDeleteCommentModal(true);
             }}
-          />
-        </>
+          >
+            <Text style={styles.buttonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
   
-
   if (loading) {
     return (
       <View style={styles.center}>
@@ -352,7 +354,7 @@ const handleAddComment = async () => {
       </View>
     );
   }
-
+  
   if (error) {
     return (
       <View style={styles.center}>
@@ -360,198 +362,479 @@ const handleAddComment = async () => {
       </View>
     );
   }
-
+  
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
     >
-    <FlatList
-  data={comments}
-  renderItem={renderComment}
-  keyExtractor={(item, index) => item.id || index.toString()} // Ensure unique key for each item
-  ListHeaderComponent={
-    <View style={styles.detailsContainer}>
-      <Text style={styles.title}>{recipe?.title}</Text>
-  
-      <Text style={styles.text}>
-        <Text style={styles.label}>Ingredients:</Text> {recipe?.ingredients}
-      </Text>
-  
-      <Text style={styles.text}>
-        <Text style={styles.label}>Instructions:</Text> {recipe?.instructions}
-      </Text>
-  
-      <Text style={styles.text}>
-  <Text style={styles.label}>Dietary Tags:</Text>{' '}
-  {Array.isArray(recipe?.dietaryTags) && recipe?.dietaryTags.length > 0
-    ? recipe?.dietaryTags.join(', ')
-    : 'No dietary tags'}
-</Text>
+      <FlatList
+        data={comments.slice().reverse()} // Reverse comments for newest to appear last
+        renderItem={renderComment}
+        keyExtractor={(item, index) => item.id || index.toString()}
 
-  
-      <Text style={styles.text}>
-        <Text style={styles.label}>Favorites Count:</Text> {recipe?.favoritesCount || 0}
-      </Text>
-  
-      {recipe?.imageUrl && (
-        <Image source={{ uri: recipe?.imageUrl }} style={styles.image} />
-      )}
-  
-      {isFavorite ? (
-        <Button
-          title="Remove from Favorites"
-          onPress={handleRemoveFromFavorites}
+        // css for 
+        ListHeaderComponent={
+          <View style={styles.detailsContainer}>
+            <Text style={styles.title}>{recipe?.title}</Text>
+        
+            <Text style={styles.text}>
+              <Text style={styles.label}>Ingredients:</Text> {recipe?.ingredients}
+            </Text>
+        
+            <Text style={styles.text}>
+              <Text style={styles.label}>Instructions:</Text> {recipe?.instructions}
+            </Text>
+        
+            <Text style={styles.text}>
+              <Text style={styles.label}>Dietary Tags:</Text>{' '}
+              {Array.isArray(recipe?.dietaryTags) && recipe?.dietaryTags.length > 0
+                ? recipe?.dietaryTags.join(', ')
+                : 'No dietary tags'}
+            </Text>
+        
+            <Text style={styles.text}>
+              <Text style={styles.label}>Favorites Count:</Text> {recipe?.favoritesCount || 0}
+            </Text>
+        
+            {recipe?.imageUrl && (
+              <Image source={{ uri: recipe?.imageUrl }} style={styles.image} />
+            )}
+        
+            <View style={styles.buttonContainer}>
+              {isFavorite ? (
+                <TouchableOpacity
+                  style={[styles.button, styles.favoriteButton]}
+                  onPress={handleRemoveFromFavorites}
+                >
+                  <Text style={styles.buttonText}>Unfavorite</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.button, styles.favoriteButton]}
+                  onPress={handleAddToFavorites}
+                >
+                  <Text style={styles.buttonText}>Favorite</Text>
+                </TouchableOpacity>
+              )}
+        
+              {recipe?.ownerId === loggedInUserId && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.button, styles.editButton]}
+                    onPress={() => setShowEditRecipeModal(true)}
+                  >
+                    <Text style={styles.buttonText}>Edit Recipe</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.deleteButton]}
+                    onPress={() => setShowDeleteRecipeModal(true)}
+                  >
+                    <Text style={styles.buttonText}>Delete Recipe</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </View>
+        }
+        
+
+
+        ListFooterComponent={
+          <View style={styles.footerButtonContainer}>
+            <TouchableOpacity 
+              style={styles.footerButton} 
+              onPress={() => setShowAddCommentModal(true)}
+            >
+              <Text style={styles.footerButtonText}>Add Comment</Text>
+            </TouchableOpacity>
+          </View>
+        }
+        
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No comments yet. Be the first to comment!</Text>
+        }
         />
-      ) : (
-        <Button
-          title="Add to Favorites"
-          onPress={handleAddToFavorites}
-        />
-      )}
-  
-      {recipe?.ownerId === loggedInUserId && (
-        <>
-          <Button title="Edit Recipe" onPress={() => setShowEditRecipeModal(true)} />
-          <Button title="Delete Recipe" color="red" onPress={() => setShowDeleteRecipeModal(true)} />
-        </>
-      )}
-    </View>
-  }
-  ListFooterComponent={
-    <Button title="Add Comment" onPress={() => setShowAddCommentModal(true)} />
-  }
-  ListEmptyComponent={<Text style={styles.emptyText}>No comments yet. Be the first to comment!</Text>}
-  />
   
 
 
-      {/* Add Comment Modal */}
-      <Modal visible={showAddCommentModal} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Add your comment..."
-            value={newComment}
-            onChangeText={setNewComment}
-          />
-          <Button title="Submit" onPress={handleAddComment} />
-          <Button title="Cancel" color="red" onPress={() => setShowAddCommentModal(false)} />
-        </View>
-      </Modal>
-
-      {/* Edit Comment Modal */}
-      <Modal visible={showEditCommentModal} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Edit your comment..."
-            value={editCommentContent}
-            onChangeText={setEditCommentContent}
-          />
-          <Button title="Save" onPress={handleEditComment} />
-          <Button title="Cancel" color="red" onPress={() => setShowEditCommentModal(false)} />
-        </View>
-      </Modal>
-
-      {/* Delete Comment Modal */}
-      <Modal visible={showDeleteCommentModal} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <Text>Are you sure you want to delete this comment?</Text>
-          <Button title="Delete" color="red" onPress={handleDeleteComment} />
-          <Button title="Cancel" onPress={() => setShowDeleteCommentModal(false)} />
-        </View>
-      </Modal>
-
-      {/* Edit Recipe Modal */}
-      <Modal visible={showEditRecipeModal} transparent animationType="slide">
+    {/* Add Comment Modal */}
+<Modal visible={showAddCommentModal} transparent animationType="slide">
   <View style={styles.modalContainer}>
-    <Text style={styles.label}>Recipe Title</Text>
-    <TextInput
-      style={styles.input}
-      placeholder="Edit Recipe Title"
-      value={editRecipeData.title !== undefined ? editRecipeData.title : recipe?.title || ''}
-      onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, title: text }))}
-    />
-    <Text style={styles.label}>Ingredients</Text>
-    <TextInput
-      style={styles.input}
-      placeholder="Edit Ingredients"
-      value={editRecipeData.ingredients !== undefined ? editRecipeData.ingredients : recipe?.ingredients || ''}
-      onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, ingredients: text }))}
-    />
-    <Text style={styles.label}>Instructions</Text>
-    <TextInput
-      style={styles.input}
-      placeholder="Edit Instructions"
-      value={editRecipeData.instructions !== undefined ? editRecipeData.instructions : recipe?.instructions || ''}
-      onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, instructions: text }))}
-    />
-  <Text style={styles.label}>Dietary Tags</Text>
-<TextInput
-  style={styles.input}
-  placeholder="Edit Dietary Tags (comma-separated)"
-  value={
-    editRecipeData.dietaryTags !== undefined
-      ? editRecipeData.dietaryTags.join(', ') // Convert array to comma-separated string
-      : recipe?.dietaryTags?.join(', ') || '' // Fallback to current recipe tags
-  }
-  onChangeText={(text) =>
-    setEditRecipeData((prev) => ({
-      ...prev,
-      dietaryTags: text ? text.split(',').map((tag) => tag.trim()) : [], // Split string into array
-    }))
-  }
-/>
-    <Text style={styles.label}>Image URL</Text>
-    <TextInput
-      style={styles.input}
-      placeholder="Edit Image URL"
-      value={editRecipeData.imageUrl !== undefined ? editRecipeData.imageUrl : recipe?.imageUrl || ''}
-      onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, imageUrl: text }))}
-    />
-    <Button title="Save" onPress={handleEditRecipe} />
-    <Button title="Cancel" color="red" onPress={() => setShowEditRecipeModal(false)} />
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Add Comment</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Add your comment..."
+        value={newComment}
+        onChangeText={setNewComment}
+      />
+      <View style={styles.modalButtonContainer}>
+        <TouchableOpacity style={styles.modalButton} onPress={handleAddComment}>
+          <Text style={styles.modalButtonText}>Submit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.modalCancelButton]}
+          onPress={() => setShowAddCommentModal(false)}
+        >
+          <Text style={styles.modalButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+
+{/* Edit Comment Modal */}
+<Modal visible={showEditCommentModal} transparent animationType="slide">
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Edit Comment</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Edit your comment..."
+        value={editCommentContent}
+        onChangeText={setEditCommentContent}
+      />
+      <View style={styles.modalButtonContainer}>
+        <TouchableOpacity style={styles.modalButton} onPress={handleEditComment}>
+          <Text style={styles.modalButtonText}>Save</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.modalCancelButton]}
+          onPress={() => setShowEditCommentModal(false)}
+        >
+          <Text style={styles.modalButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+
+{/* Delete Comment Modal */}
+<Modal visible={showDeleteCommentModal} transparent animationType="slide">
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Confirm Delete</Text>
+      <Text>Are you sure you want to delete this comment?</Text>
+      <View style={styles.modalButtonContainer}>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.modalCancelButton]}
+          onPress={handleDeleteComment}
+        >
+          <Text style={styles.modalButtonText}>Delete</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.modalButton}
+          onPress={() => setShowDeleteCommentModal(false)}
+        >
+          <Text style={styles.modalButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   </View>
 </Modal>
 
 
+     
+    {/* Edit Recipe Modal */}
+<Modal visible={showEditRecipeModal} transparent animationType="slide">
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Edit Recipe</Text>
+      <Text style={styles.label}>Recipe Title</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Edit Recipe Title"
+        value={editRecipeData.title !== undefined ? editRecipeData.title : recipe?.title || ''}
+        onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, title: text }))}
+      />
+      <Text style={styles.label}>Ingredients</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Edit Ingredients"
+        value={editRecipeData.ingredients !== undefined ? editRecipeData.ingredients : recipe?.ingredients || ''}
+        onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, ingredients: text }))}
+      />
+      <Text style={styles.label}>Instructions</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Edit Instructions"
+        value={editRecipeData.instructions !== undefined ? editRecipeData.instructions : recipe?.instructions || ''}
+        onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, instructions: text }))}
+      />
+      <Text style={styles.label}>Dietary Tags</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Edit Dietary Tags (comma-separated)"
+        value={
+          editRecipeData.dietaryTags !== undefined
+            ? editRecipeData.dietaryTags.join(', ') 
+            : recipe?.dietaryTags?.join(', ') || '' 
+        }
+        onChangeText={(text) =>
+          setEditRecipeData((prev) => ({
+            ...prev,
+            dietaryTags: text ? text.split(',').map((tag) => tag.trim()) : [],
+          }))
+        }
+      />
+      <Text style={styles.label}>Image URL</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Edit Image URL"
+        value={editRecipeData.imageUrl !== undefined ? editRecipeData.imageUrl : recipe?.imageUrl || ''}
+        onChangeText={(text) => setEditRecipeData((prev) => ({ ...prev, imageUrl: text }))}
+      />
+      <View style={styles.modalButtonContainer}>
+        <TouchableOpacity style={styles.modalButton} onPress={handleEditRecipe}>
+          <Text style={styles.modalButtonText}>Save</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.modalCancelButton]}
+          onPress={() => setShowEditRecipeModal(false)}
+        >
+          <Text style={styles.modalButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+
+{/* Delete Recipe Modal */}
+<Modal visible={showDeleteRecipeModal} transparent animationType="slide">
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Delete Recipe</Text>
+      <Text>Are you sure you want to delete this recipe?</Text>
+      <View style={styles.modalButtonContainer}>
+        <TouchableOpacity
+          style={[styles.modalButton, styles.modalCancelButton]}
+          onPress={handleDeleteRecipe}
+        >
+          <Text style={styles.modalButtonText}>Delete</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.modalButton}
+          onPress={() => setShowDeleteRecipeModal(false)}
+        >
+          <Text style={styles.modalButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
 
 
-      
-
-      {/* Delete Recipe Modal */}
-      <Modal visible={showDeleteRecipeModal} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <Text>Are you sure you want to delete this recipe?</Text>
-          <Button title="Delete" color="red" onPress={handleDeleteRecipe} />
-          <Button title="Cancel" onPress={() => setShowDeleteRecipeModal(false)} />
-        </View>
-      </Modal>
     </KeyboardAvoidingView>
   );
 };
+export default Details;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  detailsContainer: { padding: 16, backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: 'bold' },
-  text: { fontSize: 16, marginVertical: 4 },
-  image: { width: 200, height: 200, marginVertical: 10 },
-  comment: { padding: 8, borderBottomWidth: 1, borderBottomColor: '#ccc' },
-  commentMeta: { fontStyle: 'italic', color: '#555' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f7f8fa', 
+    padding: 16, 
+  },
+  detailsContainer: { 
+    padding: 16, 
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom: 16,
+  },
+  title: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    color: '#2c3e50', 
+    textAlign: 'center', 
+    marginBottom: 12,
+  },
+  text: { 
+    fontSize: 16, 
+    marginVertical: 4, 
+    color: '#34495e', 
+    lineHeight: 22,
+  },
+  label: { 
+    fontWeight: 'bold', 
+    color: '#2c3e50',
+    marginBottom: 4,
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    marginVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    resizeMode: 'cover',
+  },
+  comment: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    marginBottom: 16,
+    backgroundColor: '#fdfdfd',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  commentContent: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: '#2c3e50',
+  },
+  commentMeta: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 4,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    marginTop: 8,
+    justifyContent: 'flex-start',
+    flexWrap: 'wrap',
+  },
+  button: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  editButton: {
+    backgroundColor: '#3498db',
+  },
+  deleteButton: {
+    backgroundColor: '#e74c3c',
+  },
+  favoriteButton: {
+    backgroundColor: '#2ecc71',
+  },
+  unfavoriteButton: {
+    backgroundColor: '#95a5a6',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 20,
-    margin: 20,
-    borderRadius: 8,
   },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 8, width: '100%', marginBottom: 10 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  error: { color: 'red', fontSize: 16, textAlign: 'center' },
-});
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
+    width: '90%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#bdc3c7',
+    padding: 10,
+    width: '100%',
+    marginBottom: 15,
+    borderRadius: 6,
+    backgroundColor: '#ecf0f1',
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    backgroundColor: '#3498db',
+    marginHorizontal: 5,
+    flex: 1,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  modalCancelButton: {
+    backgroundColor: '#e74c3c',
+  },
 
-export default Details;
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  error: {
+    color: '#e74c3c',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  emptyComments: {
+    textAlign: 'center',
+    color: '#7f8c8d',
+    fontStyle: 'italic',
+    marginTop: 16,
+    fontSize: 16,
+  },
+
+
+
+  footerButtonContainer: {
+    marginVertical: 16,
+    alignItems: 'center',
+  },
+  footerButton: {
+    backgroundColor: '#3498db', // Light blue color
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  footerButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#7f8c8d',
+    fontStyle: 'italic',
+    marginTop: 16,
+    fontSize: 16,
+  },
+});
