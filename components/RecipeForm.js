@@ -36,7 +36,8 @@ const RecipeForm = () => {
 
             const result = await response.json();
             Alert.alert('Success', `Recipe created: ${result.recipe?.title || ''}`, [
-                { text: 'OK', onPress: () => navigation.navigate('Feed') }, // Navigate to Feed after success
+                // { text: 'OK', onPress: () => navigation.navigate('Feed') }, // Navigate to Feed after success
+                { text: 'OK' },
             ]);
         } catch (error) {
             console.error('Error creating recipe:', error);
