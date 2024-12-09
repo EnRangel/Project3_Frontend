@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 const Feed = ({ navigation }) => {
   const [search, setSearch] = useState('');
@@ -17,36 +18,39 @@ const Feed = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchRecipes = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const response = await fetch('http://10.0.2.2:8080/recipes/all', {
-          method: 'GET',
-          credentials: 'include',
-        });
+  const fetchRecipes = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('http://10.0.2.2:8080/recipes/all', {
+        method: 'GET',
+        credentials: 'include',
+      });
 
-        if (!response.ok) {
-          throw new Error(`HTTP Error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const sortedRecipes = data.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
-        setRecipes(sortedRecipes);
-        setFilteredRecipes(sortedRecipes); // Initialize filtered with all recipes
-      } catch (error) {
-        console.error('Error fetching recipes:', error);
-        setError('Failed to fetch recipes. Please try again later.');
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
       }
-    };
 
-    fetchRecipes();
-  }, []);
+      const data = await response.json();
+      const sortedRecipes = data.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setRecipes(sortedRecipes);
+      setFilteredRecipes(sortedRecipes);
+    } catch (error) {
+      console.error('Error fetching recipes:', error);
+      setError('Failed to fetch recipes. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Use `useFocusEffect` to refresh recipes whenever the screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchRecipes();
+    }, [])
+  );
 
   const handleSearch = (text) => {
     setSearch(text);
@@ -54,7 +58,7 @@ const Feed = ({ navigation }) => {
       setFilteredRecipes(recipes);
     } else {
       const filtered = recipes.filter((recipe) => {
-        const dietaryTags = recipe.dietaryTags || []; // Handle missing tags
+        const dietaryTags = recipe.dietaryTags || [];
         return (
           recipe.title.toLowerCase().includes(text.toLowerCase()) ||
           dietaryTags.some((tag) => tag.toLowerCase().includes(text.toLowerCase()))
@@ -67,13 +71,10 @@ const Feed = ({ navigation }) => {
   const renderRecipe = ({ item }) => (
     <TouchableOpacity
       style={styles.recipeItem}
-      onPress={() => navigation.navigate('Details', { recipeId: item.id })} // Pass the `id` field
+      onPress={() => navigation.navigate('Details', { recipeId: item.id })}
     >
       {item.imageUrl ? (
-        <Image
-          source={{ uri: item.imageUrl }}
-          style={styles.recipeImage}
-        />
+        <Image source={{ uri: item.imageUrl }} style={styles.recipeImage} />
       ) : (
         <View style={styles.imagePlaceholder}>
           <Text style={styles.placeholderText}>No Image</Text>
@@ -118,7 +119,7 @@ const Feed = ({ navigation }) => {
         <FlatList
           data={filteredRecipes}
           renderItem={renderRecipe}
-          keyExtractor={(item) => item.id} // Use `id` field as the key
+          keyExtractor={(item) => item.id}
         />
       ) : (
         <Text style={styles.noResults}>No recipes found.</Text>
@@ -132,7 +133,14 @@ export default Feed;
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
-  input: { height: 40, borderColor: '#ccc', borderWidth: 1, borderRadius: 5, paddingHorizontal: 10, marginBottom: 16 },
+  input: {
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+  },
   recipeItem: {
     padding: 16,
     marginVertical: 8,
