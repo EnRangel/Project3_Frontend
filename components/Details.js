@@ -375,8 +375,26 @@ const handleAddComment = async () => {
 
         // css for 
         ListHeaderComponent={
+
+
           <View style={styles.detailsContainer}>
-            <Text style={styles.title}>{recipe?.title}</Text>
+
+      <Text style={styles.title}>{recipe?.title}</Text>
+                  <Image
+          source={
+            recipe?.imageUrl && recipe?.imageUrl.trim() !== ""
+              ? { uri: recipe.imageUrl }
+              : require('./image.png') // Default to local image.png
+          }
+          style={styles.image}
+        />
+
+        <Text style={styles.text}>
+              <Text style={styles.label}>Posted by:</Text> {recipe?.ownerUsername || 'Unknown User'}
+            </Text>
+
+
+           
         
             <Text style={styles.text}>
               <Text style={styles.label}>Ingredients:</Text> {recipe?.ingredients}
@@ -394,12 +412,10 @@ const handleAddComment = async () => {
             </Text>
         
             <Text style={styles.text}>
-              <Text style={styles.label}>Favorites Count:</Text> {recipe?.favoritesCount || 0}
+              <Text style={styles.label}>Favorites:</Text> {recipe?.favoritesCount || 0}
             </Text>
         
-            {recipe?.imageUrl && (
-              <Image source={{ uri: recipe?.imageUrl }} style={styles.image} />
-            )}
+           
         
             <View style={styles.buttonContainer}>
               {isFavorite ? (

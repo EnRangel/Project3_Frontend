@@ -73,13 +73,14 @@ const Feed = ({ navigation }) => {
       style={styles.recipeItem}
       onPress={() => navigation.navigate('Details', { recipeId: item.id })}
     >
-      {item.imageUrl ? (
-        <Image source={{ uri: item.imageUrl }} style={styles.recipeImage} />
-      ) : (
-        <View style={styles.imagePlaceholder}>
-          <Text style={styles.placeholderText}>No Image</Text>
-        </View>
-      )}
+      <Image
+      source={
+        item.imageUrl && item.imageUrl.trim() !== ""
+          ? { uri: item.imageUrl }
+          : require('./image.png') 
+      }
+      style={styles.recipeImage}
+    />
       <Text style={styles.recipeTitle}>{item.title}</Text>
       <Text style={styles.recipeDetails}>
         Created At: {new Date(item.createdAt).toLocaleDateString()}
